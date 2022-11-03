@@ -384,11 +384,6 @@ long *histogram(char *fn_input) {
     histo[i] = 0;
   }
 
-  // TODO: change to fine-grained lock
-  omp_set_num_threads(8);
-  omp_lock_t lock;
-  omp_init_lock(&lock);
-
   t_start = omp_get_wtime();
 
   /* obtain histogram from image, repeated 100 times */
@@ -396,9 +391,8 @@ long *histogram(char *fn_input) {
 #pragma omp parallel for private(i, j)
     for (i = 0; i < image->row; i++) {
       for (j = 0; j < image->col; j++) {
-        omp_set_lock(&lock);
+#pragma omp atomic update
         histo[image->content[i][j]]++;
-        omp_unset_lock(&lock);
       }
     }
   }

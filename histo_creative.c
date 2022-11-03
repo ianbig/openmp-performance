@@ -375,6 +375,7 @@ long *histogram(char *fn_input) {
   int i, j, m;
   long *histo;
   double t_start, t_end;
+  size_t max_threads = omp_get_max_threads();
 
   /* initalization & reading image file */
   histo = malloc(256 * sizeof(long));
@@ -384,10 +385,13 @@ long *histogram(char *fn_input) {
     histo[i] = 0;
   }
 
-  // TODO: change to fine-grained lock
-  omp_set_num_threads(8);
-  omp_lock_t lock;
-  omp_init_lock(&lock);
+  long **histo_per_thread = malloc(sizeof(*histo_per_thread) * max_threads);
+  for (int i = 0; i < max_threads; i++) {
+    histo_per_thread[i] = malloc(sizeof(histo_per_thread[i]) * 256);
+    for (int j = 0; j < 256; j++) {
+      histo_per_thread[i][j] = 0;
+    }
+  }
 
   t_start = omp_get_wtime();
 
@@ -396,10 +400,14 @@ long *histogram(char *fn_input) {
 #pragma omp parallel for private(i, j)
     for (i = 0; i < image->row; i++) {
       for (j = 0; j < image->col; j++) {
-        omp_set_lock(&lock);
-        histo[image->content[i][j]]++;
-        omp_unset_lock(&lock);
+        histo_per_thread[omp_get_thread_num()][image->content[i][j]]++;
       }
+    }
+  }
+
+  for (i = 0; i < max_threads; i++) {
+    for (j = 0; j < 256; j++) {
+      histo[j] += histo_per_thread[i][j];
     }
   }
 
