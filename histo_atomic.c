@@ -82,8 +82,8 @@ typedef struct {
 typedef tImage *pImage;
 
 unsigned char **read_img(char *filename, int *row, int *col, int *imgtype) {
-  char mw[5];
-  char str[10];
+  char mw[6];
+  char str[11];
   int com;
   unsigned char **image;
   int i, j, maxint;
@@ -383,6 +383,8 @@ long *histogram(char *fn_input) {
   for (i = 0; i < 256; i++) {
     histo[i] = 0;
   }
+
+  omp_set_num_threads(2);
 
   t_start = omp_get_wtime();
 

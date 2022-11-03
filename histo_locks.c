@@ -82,8 +82,8 @@ typedef struct {
 typedef tImage *pImage;
 
 unsigned char **read_img(char *filename, int *row, int *col, int *imgtype) {
-  char mw[5];
-  char str[10];
+  char mw[6];
+  char str[11];
   int com;
   unsigned char **image;
   int i, j, maxint;
@@ -384,10 +384,11 @@ long *histogram(char *fn_input) {
     histo[i] = 0;
   }
 
-  // TODO: change to fine-grained lock
-  omp_set_num_threads(8);
-  omp_lock_t lock;
-  omp_init_lock(&lock);
+  omp_set_num_threads(2);
+  omp_lock_t locks[256];
+  for (int i = 0; i < 256; i++) {
+    omp_init_lock(&locks[i]);
+  }
 
   t_start = omp_get_wtime();
 
@@ -396,9 +397,9 @@ long *histogram(char *fn_input) {
 #pragma omp parallel for private(i, j)
     for (i = 0; i < image->row; i++) {
       for (j = 0; j < image->col; j++) {
-        omp_set_lock(&lock);
+        omp_set_lock(&locks[image->content[i][j]]);
         histo[image->content[i][j]]++;
-        omp_unset_lock(&lock);
+        omp_unset_lock(&locks[image->content[i][j]]);
       }
     }
   }
