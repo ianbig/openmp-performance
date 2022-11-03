@@ -82,8 +82,8 @@ typedef struct {
 typedef tImage *pImage;
 
 unsigned char **read_img(char *filename, int *row, int *col, int *imgtype) {
-  char mw[5];
-  char str[10];
+  char mw[6];
+  char str[11];
   int com;
   unsigned char **image;
   int i, j, maxint;
@@ -375,7 +375,6 @@ long *histogram(char *fn_input) {
   int i, j, m;
   long *histo;
   double t_start, t_end;
-  size_t max_threads = omp_get_max_threads();
 
   /* initalization & reading image file */
   histo = malloc(256 * sizeof(long));
@@ -385,6 +384,8 @@ long *histogram(char *fn_input) {
     histo[i] = 0;
   }
 
+  size_t max_threads = omp_get_max_threads();
+  omp_set_num_threads(2);
   long **histo_per_thread = malloc(sizeof(*histo_per_thread) * max_threads);
   for (int i = 0; i < max_threads; i++) {
     histo_per_thread[i] = malloc(sizeof(histo_per_thread[i]) * 256);
